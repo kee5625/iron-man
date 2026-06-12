@@ -1,9 +1,11 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/player_flight.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/chase_camera.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/thruster_vfx.gd" id="3"]
 [ext_resource type="Script" path="res://scripts/hud.gd" id="4"]
+[ext_resource type="Script" path="res://scripts/weapons.gd" id="5"]
+[ext_resource type="Script" path="res://scripts/minimap.gd" id="6"]
 
 [sub_resource type="CapsuleShape3D" id="cap_shape"]
 radius = 0.5
@@ -33,6 +35,9 @@ surface_material_override/0 = SubResource("suit_mat")
 [node name="ThrusterVFX" type="Node3D" parent="Body"]
 script = ExtResource("3")
 
+[node name="Weapons" type="Node3D" parent="."]
+script = ExtResource("5")
+
 [node name="CameraRig" type="Node3D" parent="."]
 top_level = true
 script = ExtResource("2")
@@ -48,3 +53,6 @@ current = true
 
 [node name="HUD" type="CanvasLayer" parent="."]
 script = ExtResource("4")
+
+[node name="Minimap" type="Control" parent="HUD"]
+script = ExtResource("6")
