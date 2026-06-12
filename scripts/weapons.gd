@@ -54,6 +54,8 @@ func _update_lock() -> void:
 		if score < best_score:
 			best_score = score
 			best = d
+	if best != null and lock_target == null:
+		Sfx.play("lock", -14.0)
 	lock_target = best
 
 	if lock_target != null and not cam.is_position_behind(lock_target.global_position):
@@ -80,3 +82,4 @@ func _fire() -> void:
 	get_tree().current_scene.add_child(bolt)
 	bolt.setup(origin, dir, speed, bolt_damage, lock_target, homing, true,
 			Color(0.5, 0.85, 1.0))
+	Sfx.play("repulsor", -9.0)
