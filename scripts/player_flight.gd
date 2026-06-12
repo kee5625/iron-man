@@ -83,6 +83,10 @@ var _regen_timer := 0.0
 var _boost_locked := false
 var _hull_timer := 0.0
 var _spawn_xform := Transform3D.IDENTITY
+var _audio_thr := 0.0
+var _was_boosting := false
+var _thruster_sfx: AudioStreamPlayer
+var _wind_sfx: AudioStreamPlayer
 
 @onready var body: Node3D = $Body
 @onready var vfx: Node3D = $Body/ThrusterVFX
@@ -95,6 +99,17 @@ func _ready() -> void:
 	_spawn_xform = global_transform
 	hull = hull_max
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+	_thruster_sfx = AudioStreamPlayer.new()
+	_thruster_sfx.stream = Sfx.stream("thruster")
+	_thruster_sfx.volume_db = -36.0
+	add_child(_thruster_sfx)
+	_thruster_sfx.play()
+	_wind_sfx = AudioStreamPlayer.new()
+	_wind_sfx.stream = Sfx.stream("wind")
+	_wind_sfx.volume_db = -50.0
+	add_child(_wind_sfx)
+	_wind_sfx.play()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -118,7 +133,25 @@ func _physics_process(delta: float) -> void:
 	_update_energy(delta)
 	_update_visuals(delta)
 	vfx.update_thrust(_throttle, boosting, velocity.length(), delta)
+	_update_audio(delta)
 	_update_hud()
+
+
+func _update_audio(delta: float) -> void:
+	if boosting and not _was_boosting:
+		Sfx.play("boost", -6.0)
+	_was_boosting = boosting
+
+	var thr_target := 0.0
+	if state == FlightState.AIRBORNE:
+		thr_target = 1.15 if boosting else maxf(_throttle, 0.18)  # 0.18 = hover idle
+	_audio_thr = lerpf(_audio_thr, thr_target, 1.0 - exp(-6.0 * delta))
+	_thruster_sfx.volume_db = lerpf(-36.0, -8.0, clampf(_audio_thr, 0.0, 1.0))
+	_thruster_sfx.pitch_scale = 0.8 + _audio_thr * 0.55
+
+	var spd_t := clampf(velocity.length() / boost_speed, 0.0, 1.0)
+	_wind_sfx.volume_db = lerpf(-50.0, -10.0, pow(spd_t, 1.4))
+	_wind_sfx.pitch_scale = 0.85 + spd_t * 0.6
 
 
 func _fly(delta: float) -> void:
@@ -186,6 +219,7 @@ func take_hit(damage: int) -> void:
 	hull -= damage
 	_hull_timer = hull_regen_delay
 	hud.flash_hit()
+	Sfx.play("hit", -4.0)
 	if hull <= 0.0:
 		_respawn()
 
