@@ -88,6 +88,7 @@ func _shoot() -> void:
 	get_tree().current_scene.add_child(bolt)
 	bolt.setup(global_position + dir * 2.0, dir, BOLT_SPEED, BOLT_DAMAGE,
 			_player, 0.5, false, Color(1.0, 0.35, 0.2))
+	Sfx.play_at("drone_shot", global_position, -4.0)
 
 
 func take_hit(damage: int) -> void:
@@ -145,4 +146,5 @@ func _explode() -> void:
 	burst.global_position = global_position
 	burst.emitting = true
 	get_tree().create_timer(1.2).timeout.connect(burst.queue_free)
+	Sfx.play_at("explosion", global_position, 2.0)
 	queue_free()
