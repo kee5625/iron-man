@@ -61,12 +61,19 @@ enum FlightState { GROUNDED, AIRBORNE }
 ## Once drained to zero, boost stays locked until energy recovers past this.
 @export var boost_min_energy := 12.0
 
+@export_group("Hull")
+@export var hull_max := 100.0
+@export var hull_regen := 12.0
+## Seconds after last hit before hull regen starts.
+@export var hull_regen_delay := 4.0
+
 var aim_yaw := 0.0
 var aim_pitch := 0.0
 var bank := 0.0
 var state := FlightState.AIRBORNE
 var boosting := false
 var energy := 100.0
+var hull := 100.0
 
 var _visual_pitch := 0.0
 var _prev_yaw := 0.0
@@ -74,6 +81,8 @@ var _pitch_limit := 0.0
 var _throttle := 0.0
 var _regen_timer := 0.0
 var _boost_locked := false
+var _hull_timer := 0.0
+var _spawn_xform := Transform3D.IDENTITY
 
 @onready var body: Node3D = $Body
 @onready var vfx: Node3D = $Body/ThrusterVFX
@@ -81,7 +90,10 @@ var _boost_locked := false
 
 
 func _ready() -> void:
+	add_to_group("player")
 	_pitch_limit = deg_to_rad(pitch_limit_deg)
+	_spawn_xform = global_transform
+	hull = hull_max
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
@@ -94,6 +106,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventMouseButton and event.pressed \
 			and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		$Weapons.suppress(0.3)  # recapture click shouldn't also fire
 
 
 func _physics_process(delta: float) -> void:
@@ -164,6 +177,27 @@ func _update_energy(delta: float) -> void:
 	if _boost_locked and energy >= boost_min_energy:
 		_boost_locked = false
 
+	_hull_timer -= delta
+	if _hull_timer <= 0.0:
+		hull = minf(hull + hull_regen * delta, hull_max)
+
+
+func take_hit(damage: int) -> void:
+	hull -= damage
+	_hull_timer = hull_regen_delay
+	hud.flash_hit()
+	if hull <= 0.0:
+		_respawn()
+
+
+func _respawn() -> void:
+	global_transform = _spawn_xform
+	velocity = Vector3.ZERO
+	hull = hull_max
+	energy = energy_max
+	_boost_locked = false
+	state = FlightState.AIRBORNE
+
 
 func _ground_move(delta: float) -> void:
 	_throttle = 0.0
@@ -209,3 +243,7 @@ func _update_hud() -> void:
 			mode = "HOVER"
 	hud.update_stats(velocity.length(), global_position.y, mode,
 			energy, energy_max, _boost_locked)
+	var spawner := get_tree().get_first_node_in_group("drone_spawner")
+	var wave: int = spawner.wave if spawner != null else 1
+	hud.update_combat(hull, hull_max,
+			get_tree().get_nodes_in_group("drones").size(), wave)
