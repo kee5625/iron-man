@@ -1,0 +1,50 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/player_flight.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/chase_camera.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/thruster_vfx.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/hud.gd" id="4"]
+
+[sub_resource type="CapsuleShape3D" id="cap_shape"]
+radius = 0.5
+height = 1.9
+
+[sub_resource type="CapsuleMesh" id="cap_mesh"]
+radius = 0.5
+height = 1.9
+
+[sub_resource type="StandardMaterial3D" id="suit_mat"]
+albedo_color = Color(0.75, 0.12, 0.1, 1)
+metallic = 0.85
+roughness = 0.35
+
+[node name="Player" type="CharacterBody3D"]
+script = ExtResource("1")
+
+[node name="Collision" type="CollisionShape3D" parent="."]
+shape = SubResource("cap_shape")
+
+[node name="Body" type="Node3D" parent="."]
+
+[node name="Mesh" type="MeshInstance3D" parent="Body"]
+mesh = SubResource("cap_mesh")
+surface_material_override/0 = SubResource("suit_mat")
+
+[node name="ThrusterVFX" type="Node3D" parent="Body"]
+script = ExtResource("3")
+
+[node name="CameraRig" type="Node3D" parent="."]
+top_level = true
+script = ExtResource("2")
+
+[node name="SpringArm" type="SpringArm3D" parent="CameraRig"]
+spring_length = 5.5
+margin = 0.25
+
+[node name="Camera" type="Camera3D" parent="CameraRig/SpringArm"]
+fov = 75.0
+far = 2000.0
+current = true
+
+[node name="HUD" type="CanvasLayer" parent="."]
+script = ExtResource("4")
