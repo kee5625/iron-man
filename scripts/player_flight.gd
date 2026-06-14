@@ -95,6 +95,10 @@ var _wind_sfx: AudioStreamPlayer
 
 func _ready() -> void:
 	add_to_group("player")
+	Game.combat_toggled.connect(func(on: bool) -> void:
+		if on:
+			hull = hull_max  # fresh hull each time combat resumes
+	)
 	_pitch_limit = deg_to_rad(pitch_limit_deg)
 	_spawn_xform = global_transform
 	hull = hull_max
@@ -216,6 +220,8 @@ func _update_energy(delta: float) -> void:
 
 
 func take_hit(damage: int) -> void:
+	if not Game.combat_enabled:
+		return
 	hull -= damage
 	_hull_timer = hull_regen_delay
 	hud.flash_hit()
@@ -277,7 +283,8 @@ func _update_hud() -> void:
 			mode = "HOVER"
 	hud.update_stats(velocity.length(), global_position.y, mode,
 			energy, energy_max, _boost_locked)
-	var spawner := get_tree().get_first_node_in_group("drone_spawner")
-	var wave: int = spawner.wave if spawner != null else 1
-	hud.update_combat(hull, hull_max,
-			get_tree().get_nodes_in_group("drones").size(), wave)
+	if Game.combat_enabled:
+		var spawner := get_tree().get_first_node_in_group("drone_spawner")
+		var wave: int = spawner.wave if spawner != null else 1
+		hud.update_combat(hull, hull_max,
+				get_tree().get_nodes_in_group("drones").size(), wave)

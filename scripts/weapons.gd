@@ -23,6 +23,11 @@ var _side := 0.35
 
 
 func _physics_process(delta: float) -> void:
+	if not Game.combat_enabled:
+		if lock_target != null:
+			lock_target = null
+			player.hud.set_lock(Vector2.ZERO, false)
+		return
 	_update_lock()
 	_cooldown -= delta
 	if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED \

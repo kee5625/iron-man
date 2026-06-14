@@ -22,16 +22,30 @@ var _respawning := false
 func _ready() -> void:
 	add_to_group("drone_spawner")
 	_rng.randomize()
-	_spawn_wave()
+	Game.combat_toggled.connect(_on_combat_toggled)
+	if Game.combat_enabled:
+		_spawn_wave()
+
+
+func _on_combat_toggled(enabled: bool) -> void:
+	if enabled:
+		wave = 1
+		_respawning = false
+		_spawn_wave()
+	else:
+		for d in get_tree().get_nodes_in_group("drones"):
+			d.queue_free()
 
 
 func _physics_process(_delta: float) -> void:
-	if _respawning or not get_tree().get_nodes_in_group("drones").is_empty():
+	if not Game.combat_enabled or _respawning \
+			or not get_tree().get_nodes_in_group("drones").is_empty():
 		return
 	_respawning = true
 	wave += 1
 	get_tree().create_timer(wave_delay).timeout.connect(func() -> void:
-		_spawn_wave()
+		if Game.combat_enabled:
+			_spawn_wave()
 		_respawning = false
 	)
 

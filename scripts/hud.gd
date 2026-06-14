@@ -21,6 +21,7 @@ var _overlay: Control
 var _flash: ColorRect
 var _lock_pos := Vector2.ZERO
 var _has_lock := false
+var _combat_btn: CheckButton
 
 
 func _ready() -> void:
@@ -78,6 +79,38 @@ func _ready() -> void:
 	_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_overlay.draw.connect(_draw_overlay)
 	root.add_child(_overlay)
+
+	# Top-center combat toggle. Clickable once the mouse is freed (Esc); the
+	# T key toggles it any time, including mid-flight with the mouse captured.
+	_combat_btn = CheckButton.new()
+	_combat_btn.text = "COMBAT (T)"
+	_combat_btn.button_pressed = Game.combat_enabled
+	_combat_btn.anchor_left = 0.5
+	_combat_btn.anchor_right = 0.5
+	_combat_btn.offset_left = -80.0
+	_combat_btn.offset_right = 80.0
+	_combat_btn.offset_top = 16.0
+	_combat_btn.offset_bottom = 52.0
+	_combat_btn.add_theme_color_override("font_color", CYAN)
+	_combat_btn.toggled.connect(func(on: bool) -> void: Game.set_combat(on))
+	root.add_child(_combat_btn)
+
+	Game.combat_toggled.connect(_on_combat_toggled)
+	_on_combat_toggled(Game.combat_enabled)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("toggle_combat"):
+		Game.toggle_combat()
+
+
+func _on_combat_toggled(enabled: bool) -> void:
+	_combat_btn.set_pressed_no_signal(enabled)
+	_hull_bar.visible = enabled
+	_drones_label.visible = enabled
+	if not enabled:
+		_has_lock = false
+		_overlay.queue_redraw()
 
 
 func update_stats(speed: float, altitude: float, mode: String,
