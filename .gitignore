@@ -4,6 +4,7 @@
 export_presets.cfg
 export/
 
-assets/models/characters
+assets/models/
+assets/textures
 
 CLAUDE.md
