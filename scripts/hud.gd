@@ -22,6 +22,7 @@ var _flash: ColorRect
 var _lock_pos := Vector2.ZERO
 var _has_lock := false
 var _combat_btn: CheckButton
+var _fps_label: Label
 
 
 func _ready() -> void:
@@ -95,6 +96,13 @@ func _ready() -> void:
 	_combat_btn.toggled.connect(func(on: bool) -> void: Game.set_combat(on))
 	root.add_child(_combat_btn)
 
+	_fps_label = _make_label(16, Color(1, 1, 1, 0.6))
+	_fps_label.offset_left = 14.0
+	_fps_label.offset_top = 10.0
+	_fps_label.offset_right = 120.0
+	_fps_label.offset_bottom = 34.0
+	root.add_child(_fps_label)
+
 	Game.combat_toggled.connect(_on_combat_toggled)
 	_on_combat_toggled(Game.combat_enabled)
 
@@ -115,6 +123,9 @@ func _on_combat_toggled(enabled: bool) -> void:
 
 func update_stats(speed: float, altitude: float, mode: String,
 		energy: float, energy_max: float, boost_locked: bool) -> void:
+	_fps_label.visible = Settings.show_fps
+	if Settings.show_fps:
+		_fps_label.text = "%d FPS" % Engine.get_frames_per_second()
 	_speed_label.text = "%3.0f m/s" % speed
 	_alt_label.text = "ALT %4.0f m" % altitude
 	_mode_label.text = mode

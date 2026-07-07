@@ -33,5 +33,6 @@ func _physics_process(delta: float) -> void:
 		target_basis, 1.0 - exp(-rot_response * delta)).orthonormalized()
 
 	var t := clampf(player.velocity.length() / fov_speed_ref, 0.0, 1.0)
-	var target_fov := lerpf(base_fov, max_fov, t * t)
+	var kick := max_fov - base_fov  # speed kick rides on top of the user's FOV
+	var target_fov := Settings.fov + kick * t * t
 	cam.fov = lerpf(cam.fov, target_fov, 1.0 - exp(-6.0 * delta))

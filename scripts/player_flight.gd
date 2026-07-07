@@ -118,10 +118,10 @@ func _ready() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-		aim_yaw = wrapf(aim_yaw - event.relative.x * mouse_sens, -PI, PI)
-		aim_pitch = clampf(aim_pitch - event.relative.y * mouse_sens, -_pitch_limit, _pitch_limit)
-	elif event.is_action_pressed("ui_cancel"):
-		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		var sens := mouse_sens * Settings.mouse_sensitivity
+		var dy: float = event.relative.y * (-1.0 if Settings.invert_y else 1.0)
+		aim_yaw = wrapf(aim_yaw - event.relative.x * sens, -PI, PI)
+		aim_pitch = clampf(aim_pitch - dy * sens, -_pitch_limit, _pitch_limit)
 	elif event is InputEventMouseButton and event.pressed \
 			and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED

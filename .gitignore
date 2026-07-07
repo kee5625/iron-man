@@ -3,3 +3,7 @@
 *.translation
 export_presets.cfg
 export/
+
+assets/models/characters
+
+CLAUDE.md

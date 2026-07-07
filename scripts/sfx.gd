@@ -14,7 +14,9 @@ var _rng := RandomNumberGenerator.new()
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS  # menu sounds must work while paused
 	_rng.seed = 1337
+	_streams["ui"] = _gen_ui()
 	_streams["thruster"] = _gen_thruster()
 	_streams["wind"] = _gen_wind()
 	_streams["boost"] = _gen_boost()
@@ -190,6 +192,18 @@ func _gen_hit() -> AudioStreamWAV:
 		var knock := sin(TAU * 90.0 * t) * exp(-t / 0.05)
 		var click := _white() * exp(-t / 0.01) * 0.5
 		out[i] = clampf(knock + click, -1.0, 1.0) * 0.9
+	return _wav(out)
+
+
+func _gen_ui() -> AudioStreamWAV:
+	# Soft short tick for menu interactions.
+	var n := int(SR * 0.045)
+	var out := PackedFloat32Array()
+	out.resize(n)
+	for i in n:
+		var t := float(i) / SR
+		var env := minf(t / 0.002, 1.0) * exp(-t / 0.012)
+		out[i] = sin(TAU * 1800.0 * t) * env * 0.4
 	return _wav(out)
 
 
