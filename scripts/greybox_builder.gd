@@ -46,6 +46,7 @@ func _ready() -> void:
 	var pitch := lot_size + street_width
 	var half := (grid_count - 1) * pitch * 0.5
 	_add_ground(grid_count * pitch * 2.5)
+	_add_roads(pitch, half)
 
 	for ix in grid_count:
 		for iz in grid_count:
@@ -66,7 +67,7 @@ func _build_materials() -> void:
 		for tint in TINTS:
 			_facade_mats.append(_make_pbr(facade, facade_tile_m, tint, window_glow))
 	_roof_mat = _make_pbr("Concrete034", 4.0, Color(0.9, 0.88, 0.85), 0.0)
-	_ground_mat = _make_pbr("Asphalt010", 4.0, Color.WHITE, 0.0)
+	_ground_mat = _make_pbr("PavingStones070", 2.0, Color.WHITE, 0.0)
 
 
 ## Builds a triplanar PBR material from an ambientCG folder; flat-color
@@ -140,6 +141,66 @@ func _add_building(size: Vector3, pos: Vector3, mat: StandardMaterial3D) -> void
 
 	body.position = pos
 	add_child(body)
+
+
+## Marked road strips down every street, plain asphalt squares at the
+## intersections (hides the crossing lane-lines). Roads are visual-only planes
+## floating millimeters over the collision ground — no physics seams.
+## Stacking order: sidewalk 0 < N-S roads 0.03 < E-W roads 0.05 < crossings 0.07.
+func _add_roads(pitch: float, half: float) -> void:
+	var road_len := grid_count * pitch + street_width
+	var road_mat := _make_road_mat(road_len / street_width)
+	var cross_mat := _make_pbr("Asphalt010", 4.0, Color.WHITE, 0.0)
+
+	for i in grid_count + 1:
+		var c := i * pitch - half - pitch * 0.5
+		_add_road_plane(Vector3(c, 0.03, 0.0), road_len, false, road_mat)
+		_add_road_plane(Vector3(0.0, 0.05, c), road_len, true, road_mat)
+
+	for i in grid_count + 1:
+		for j in grid_count + 1:
+			var p := MeshInstance3D.new()
+			var pm := PlaneMesh.new()
+			pm.size = Vector2(street_width, street_width)
+			p.mesh = pm
+			p.material_override = cross_mat
+			p.position = Vector3(i * pitch - half - pitch * 0.5, 0.07,
+					j * pitch - half - pitch * 0.5)
+			add_child(p)
+
+
+func _add_road_plane(pos: Vector3, length: float, along_x: bool,
+		mat: StandardMaterial3D) -> void:
+	var p := MeshInstance3D.new()
+	var pm := PlaneMesh.new()
+	pm.size = Vector2(street_width, length)
+	p.mesh = pm
+	p.material_override = mat
+	p.position = pos
+	if along_x:
+		p.rotation.y = PI / 2.0
+	add_child(p)
+
+
+## Road needs directional UVs (lane markings must run along the street), so no
+## triplanar here — plain UV, tiled down the plane's length.
+func _make_road_mat(tiles: float) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	var base := TEX_ROOT + "Road012A/Road012A_1K-JPG_"
+	var col := _tex(base + "Color.jpg")
+	if col != null:
+		m.albedo_texture = col
+	else:
+		m.albedo_color = Color(0.2, 0.2, 0.21)
+	var nrm := _tex(base + "NormalGL.jpg")
+	if nrm != null:
+		m.normal_enabled = true
+		m.normal_texture = nrm
+	var rgh := _tex(base + "Roughness.jpg")
+	if rgh != null:
+		m.roughness_texture = rgh
+	m.uv1_scale = Vector3(1.0, tiles, 1.0)
+	return m
 
 
 func _add_ground(size: float) -> void:
